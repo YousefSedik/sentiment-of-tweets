@@ -2,11 +2,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import (
     accuracy_score,
-    classification_report,
-    confusion_matrix,
 )
-import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
 import numpy as np
 
@@ -210,24 +206,15 @@ class MulticlassANFIS:
 # Load the data
 def load_data():
     try:
-        # Load text embeddings
         embeddings = np.load("data/embeddings.npy")
-
-        # Load sentiment data
         df = pd.read_csv("data/cleaned_data.csv")
-
-        print(
-            f"Loaded {embeddings.shape[0]} embeddings with dimension {embeddings.shape[1]}"
-        )
-        print(f"Loaded {df.shape[0]} records from CSV with {df.shape[1]} columns")
-
         return embeddings, df
     except Exception as e:
         print(f"Error loading data: {e}")
         return None, None
 
 
-def main():
+if __name__ == "__main__":
     # Load data
     embeddings, df = load_data()
 
@@ -236,11 +223,9 @@ def main():
 
     # Use the embeddings as features (X)
     X = embeddings
-    print(f"Feature shape: {X.shape}")
-    print(X)
     # Check how many unique sentiments we have
     n_sentiments = len(np.unique(y))
-    
+
     # Scale the features
     scaler = MinMaxScaler()
     X_scaled = scaler.fit_transform(X)
@@ -255,8 +240,8 @@ def main():
 
     # Initialize and train the multiclass ANFIS model
     # Reduce the dimensionality of input for efficiency if needed
-    max_features = min(50, X_train.shape[1])  # Use at most 50 features
-    if X_train.shape[1] > max_features:
+    max_features = min(200, X_train.shape[1])  # Use at most 50 features
+    if max_features is not None and X_train.shape[1] > max_features:
         print(
             f"Reducing feature dimensionality from {X_train.shape[1]} to {max_features}"
         )
@@ -271,8 +256,9 @@ def main():
         n_classes=n_sentiments,
         n_membership=2,  # Fewer membership functions
         learning_rate=0.01,
-        epochs=20,  # Fewer epochs
+        epochs=50,  # Fewer epochs
         max_rules=16,  # Fewer rules
+        # max_features=None,
     )
 
     model.fit(X_train, y_train)
@@ -284,8 +270,3 @@ def main():
     accuracy = accuracy_score(y_test, y_pred)
 
     print(f"Accuracy: {accuracy * 100:.2f}%")
-
-
-
-if __name__ == "__main__":
-    main()
