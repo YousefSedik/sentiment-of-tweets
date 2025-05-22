@@ -2,6 +2,4 @@
 *.xml
 *.pyo
 .idea
-cleaned_data.csv
-*.npy
 .venv

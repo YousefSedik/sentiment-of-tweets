@@ -35,9 +35,9 @@ class ANFIS:
                 memberships[:, i, j] = self.triangular_membership(
                     X[:, i], self.centers[i, j], self.spreads[i, j]
                 )
-        return np.clip(memberships, 1e-10, 1.0)
+        return np.clip(memberships, 1e-15, 1.0)
 
-    def layer2_3(self, memberships):
+    def layer_2_and_3(self, memberships):
         """Simplified rule layer with limited rules"""
         n_samples = memberships.shape[0]
         n_features = memberships.shape[1]
@@ -68,7 +68,7 @@ class ANFIS:
     def forward_pass(self, X):
         """Forward pass with sigmoid activation"""
         memberships = self.layer1(X)
-        normalized_firing_strengths = self.layer2_3(memberships)
+        normalized_firing_strengths = self.layer_2_and_3(memberships)
 
         X_expanded = np.column_stack([X, np.ones(X.shape[0])])
         consequent_outputs = np.dot(X_expanded, self.consequent_params.T)
@@ -127,7 +127,7 @@ class ANFIS:
 
             X_expanded = np.column_stack([X, np.ones(X.shape[0])])
             memberships = self.layer1(X)
-            normalized_firing_strengths = self.layer2_3(memberships)
+            normalized_firing_strengths = self.layer_2_and_3(memberships)
 
             for i in range(self.max_rules):
                 gradient = np.dot(
@@ -168,7 +168,7 @@ class ANFIS:
         return self.forward_pass(X)
 
 
-class MulticlassANFIS:
+class MulticlassANFIS(ANFIS):
     """Extension of ANFIS to handle multiclass classification using one-vs-rest strategy"""
 
     def __init__(
@@ -240,8 +240,8 @@ if __name__ == "__main__":
 
     # Initialize and train the multiclass ANFIS model
     # Reduce the dimensionality of input for efficiency if needed
-    max_features = min(200, X_train.shape[1])  # Use at most 50 features
-    if max_features is not None and X_train.shape[1] > max_features:
+    max_features = min(300, X_train.shape[1])  # Use at most 300 features
+    if X_train.shape[1] > max_features:
         print(
             f"Reducing feature dimensionality from {X_train.shape[1]} to {max_features}"
         )
@@ -251,14 +251,12 @@ if __name__ == "__main__":
         X_train = pca.fit_transform(X_train)
         X_test = pca.transform(X_test)
 
-    # Train model with reduced parameters for efficiency
     model = MulticlassANFIS(
         n_classes=n_sentiments,
-        n_membership=2,  # Fewer membership functions
+        n_membership=2,
         learning_rate=0.01,
-        epochs=50,  # Fewer epochs
-        max_rules=16,  # Fewer rules
-        # max_features=None,
+        epochs=50,  
+        max_rules=16,  
     )
 
     model.fit(X_train, y_train)
